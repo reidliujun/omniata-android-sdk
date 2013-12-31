@@ -1,0 +1,422 @@
+package com.omniata.android.sdk;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Locale;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.app.Activity;
+import android.provider.Settings;
+import android.util.Log;
+
+public class Omniata {
+	
+	public static final String TAG      = "Omniata";
+	public static final String API 		= "api.omniata.com";
+	public static final String TEST_API = "api-test.omniata.com";
+	
+	private static Omniata instance;
+	
+	/**
+	 * Initializes the Omniata API
+	 * 
+	 * @param activity
+	 * @param apiKey	The api-key
+	 * @param userID	The user-id
+	 * @param debug 	True if events should be tracked against the event-monitor
+	 */
+	public static void initialize(Activity activity, String apiKey, String userID, boolean debug) {
+		synchronized(Omniata.class) {
+			if (instance == null) {
+				instance = new Omniata(activity, apiKey, userID, debug);
+				instance.initializeWorkers();
+			}
+		}
+	}
+	
+	/**
+	 * Initializes the Omniata API
+	 * 
+	 * @param activity
+	 * @param api_key
+	 * @param user_id
+	 */
+	public static void initialize(Activity activity, String apiKey, String userID) {
+		initialize(activity, apiKey, userID, false);
+	}
+	
+	/**
+	 * Tracks a parameterless event
+	 * 
+	 * @param eventType
+	 */
+	public static void track(String eventType) {
+		track(eventType, null);
+	}
+	
+	/**
+	 * Tracks an event with parameters
+	 * 
+	 * @param eventType
+	 * @param parameters
+	 */
+	public static void track(String eventType, JSONObject parameters) {
+		synchronized(Omniata.class) {
+			instance._track(eventType, parameters);
+		}
+	}
+	
+	/**
+	 * Tracks a load event. 
+	 * Should be called upon app start.
+	 */
+	public static void trackLoad() {
+		trackLoad(getDeviceProperties());
+	}
+	
+	public static void trackLoad(JSONObject parameters) {
+		synchronized(Omniata.class) {
+			instance._track("om_load", OmniataUtils.mergeJSON(getDeviceProperties(), parameters));
+		}
+	}
+	
+	/**
+	 * Sets the current user id used to track events
+	 * @param userId
+	 */
+	public static void setUserId(String userId) {
+		synchronized(Omniata.class) {
+			instance._setUserId(userId);
+		}
+	}
+	
+	/**
+	 * Sets the current API key used to track events
+	 * @param apiKey
+	 */
+	public static void setApiKey(String apiKey) {
+		synchronized(Omniata.class) {
+			instance._setApiKey(apiKey);
+		}
+	}
+	
+	/**
+	 * Fetches content for this user from a specific channel
+	 * 
+	 * @param channelId The id of this channel
+	 * @param handler An object implementing OmniataChannelResponseHandler
+	 */
+	public static void channel(int channelId, OmniataChannelResponseHandler handler) {
+		synchronized(Omniata.class) {
+			instance._channel(channelId, handler);
+		}
+	}
+	
+	/**
+	 * Tracks a revenue event
+	 * 
+	 * @param total Revenue amount in currency code
+	 * @param currencyCode A three letter currency code following ISO-4217 spec.
+	 */
+	public static void trackRevenue(double total, String currencyCode) {
+		trackRevenue(total, currencyCode, null);
+	}
+	
+	/**
+	 * Tracks a revenue event
+	 * 
+	 * @param total Revenue amount in currency code
+	 * @param currencyCode A three letter currency code following ISO-4217 spec.
+	 * @param additionalParams Additional parameters to be tracked with event
+	 */
+	public static void trackRevenue(double total, String currencyCode, JSONObject additionalParams) {
+		JSONObject parameters = new JSONObject();
+		
+		try {
+			parameters.put("total", total);
+			parameters.put("currency_code", currencyCode);
+			
+			if (additionalParams != null) {
+				@SuppressWarnings("unchecked")
+				Iterator<String> i = (Iterator<String>)additionalParams.keys();
+				while(i.hasNext()) {
+					String key = (String)i.next();
+					Object val = additionalParams.get(key);
+					parameters.put(key, val);
+				}
+			}
+			
+			synchronized(Omniata.class) {
+				instance._track("om_revenue", parameters);
+			}
+			
+		} catch (JSONException e) {
+			Log.e(TAG, e.toString());
+		}
+	}
+	
+	public static void setConnectionTimeout(int ms) {
+		synchronized(Omniata.class) {
+			instance.connectionTimeout = ms;
+		}
+	}
+	
+	public static void setReadTimeout(int ms) {
+		synchronized(Omniata.class) {
+			instance.readTimeout = ms;
+		}
+	}
+	
+	protected static JSONObject getDeviceProperties() {
+		JSONObject properties = new JSONObject();
+		//Locale locale = Locale.getDefault();
+		
+		try {
+			/*
+			properties.put("om_platform", "Android");
+			properties.put("om_android_id", Settings.Secure.ANDROID_ID);
+			properties.put("om_android_serial", android.os.Build.SERIAL);
+			properties.put("om_android_model", android.os.Build.MODEL);
+			properties.put("om_android_device", android.os.Build.DEVICE);
+			properties.put("om_android_hardware", android.os.Build.HARDWARE);
+		
+			if (locale != null) {
+				properties.put("om_locale", locale);
+			}
+			*/
+		} catch(Throwable e) {
+			
+		}
+		return properties;
+	}
+	
+	protected static String getProtocol(boolean useSSL) {
+		return useSSL ? "https://" : "http://";
+	}
+	
+	protected static String getEventAPI(boolean useSSL, boolean debug) {
+		if (debug) {
+			return getProtocol(useSSL) + TEST_API + "/event";
+		} else {
+			return getProtocol(useSSL) + API + "/event";
+		}
+	}
+	
+	protected static String getChannelAPI(boolean useSSL) {
+		return getProtocol(useSSL) + API + "/channel";
+	}
+	
+	protected void _track(String eventType, JSONObject parameters) {
+		JSONObject event;
+		
+		try {			
+			if (parameters != null) {
+				event = new JSONObject(parameters.toString());
+			} else {
+				event = new JSONObject();
+			}
+			
+			event.put("om_event_type", eventType);
+			event.put("api_key", apiKey);
+			event.put("uid", userID);
+			
+			while(true) {
+				try {
+					inputQueue.put(event);
+					break;
+				} catch (InterruptedException e) {
+				}
+			}
+		} catch (JSONException e) {
+			Log.e(TAG, e.toString());
+		}
+	}
+	
+	protected void _channel(final int channelId, final OmniataChannelResponseHandler handler) {
+		Thread req = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {
+				String uri = getChannelAPI(false) + "?api_key=" + apiKey + "uid=" + userID;
+				
+				try {
+					URL url = new URL(uri);
+					final HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+					
+					final int httpResponse = connection.getResponseCode();
+					
+					if (httpResponse >= 200 && httpResponse < 300) {
+						activity.runOnUiThread(new Runnable() {							
+							@Override
+							public void run() {
+								try {
+									String body = OmniataUtils.convertStreamToString(connection.getInputStream());
+									JSONObject jsonObj =  new JSONObject(body);
+									JSONArray content   = jsonObj.getJSONArray("content");
+									handler.onSuccess(channelId, content);
+								} catch (Exception e) {
+									handler.onError(channelId, e);
+								}
+							}
+						});
+						
+					} else {
+						activity.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								handler.onError(channelId, new Exception("Error: Invalid http response code: " + httpResponse));
+							}
+						});
+					}
+				} catch (final Exception e) {
+					activity.runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							handler.onError(channelId, e);
+						}
+					});
+					
+				}
+			}
+		});
+		
+		req.start();
+	}
+	
+	private void _setApiKey(String apiKey) {
+		this.apiKey = apiKey;
+	}
+	
+	private void _setUserId(String userId) {
+		this.userID = userId;
+	}
+	
+	private void initializeWorkers() {		
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				while(true) {
+					JSONObject event;
+					try {
+						event = inputQueue.take();
+						persistantQueue.add(event);
+					} catch (InterruptedException e) {
+						continue;
+					}
+				}
+			}
+		}).start();
+		
+		worker.start();
+	}
+	
+	private Omniata(Activity activity, String apiKey, String userID, boolean debug) {
+		Log.i(TAG, "Initializing Omniata with apiKey: " + apiKey + " and userID: " + userID);
+		
+		this.activity = activity;
+		this.apiKey   = apiKey;
+		this.userID   = userID;
+		this.debug    = debug;
+		inputQueue    = new LinkedBlockingQueue<JSONObject>();
+		retryQueue    = new LinkedList<JSONObject>();
+		
+		persistantQueue = new PersistentBlockingQueue<JSONObject>(activity, "events", JSONObject.class);
+		worker   	  = new Thread(new OmniataWorker());
+		
+		this.connectionTimeout = 30 * 1000;
+		this.readTimeout 	   = 30 * 1000;
+	}
+	
+	private Activity 					activity;
+	private String 						apiKey;
+	private String 						userID;
+	private volatile int				connectionTimeout;
+	private volatile int				readTimeout;
+	private boolean 					debug;	
+	private BlockingQueue<JSONObject> 	inputQueue; // This queue is thread-safe
+	private PersistentBlockingQueue<JSONObject> persistantQueue;
+	private LinkedList<JSONObject> 		retryQueue;	// Single-Threaded only
+	private Thread 						worker;
+	
+	private class OmniataWorker implements Runnable {
+		@Override
+		public void run() {			
+			while(true) {
+				if (OmniataUtils.isConnected(activity)) {
+					processEvents();
+				} else {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						continue;
+					}
+				}
+			}
+		}
+		
+		protected void processEvents() {
+			try {
+				if (retryQueue.size() > 0) {
+					sendEvent(retryQueue.remove());
+				} else {
+					//sendEvent(inputQueue.take());
+					sendEvent(persistantQueue.take());					
+				}
+			} catch (InterruptedException e) {
+				return;
+			}
+		}
+		
+		protected void sendEvent(JSONObject event) {
+			URL url;
+			HttpURLConnection connection = null;
+			@SuppressWarnings("unused")
+			InputStream in;
+			int httpResponse;
+			
+			try {
+				String query    = OmniataUtils.jsonToQueryString(event);
+				String eventURL = getEventAPI(false, debug) + "?" + query;		
+			
+				url = new URL(eventURL);
+				connection = (HttpURLConnection)url.openConnection();
+				connection.setConnectTimeout(connectionTimeout);
+				connection.setReadTimeout(readTimeout);
+				in = connection.getInputStream();
+				httpResponse = connection.getResponseCode();
+				
+				if (httpResponse >= 500) {
+					// 5xx Server Error
+					retryQueue.add(event); // Retry
+				} else if (httpResponse >= 400) {
+					// 4xx Client Error
+				} else if (httpResponse >= 300) {
+					// 3xx Redirection
+				} else if (httpResponse >= 200) {
+					// 2xx Success
+				} else {
+					// 1xx Informational
+				}		
+			} catch (MalformedURLException e) {
+				Log.e(TAG, e.toString());
+			} catch (IOException e) {
+				Log.e(TAG, e.toString());
+			} finally {
+				if (connection != null) {
+					connection.disconnect();
+				}
+			}
+		}
+	}
+}
