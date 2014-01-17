@@ -160,20 +160,6 @@ public class Omniata {
 		}
 	}
 	
-	/*
-	public static void setConnectionTimeout(int ms) {
-		synchronized(Omniata.class) {
-			instance._setConnectionTimeout(ms);
-		}
-	}
-	
-	public static void setReadTimeout(int ms) {
-		synchronized(Omniata.class) {
-			instance._setReadTimeout(ms);
-		}
-	}
-	*/
-	
 	protected static JSONObject getDeviceProperties() {
 		JSONObject properties = new JSONObject();
 		Locale locale = Locale.getDefault();
