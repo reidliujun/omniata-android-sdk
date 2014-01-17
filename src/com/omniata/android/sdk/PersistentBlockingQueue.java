@@ -59,9 +59,30 @@ import android.database.sqlite.SQLiteOpenHelper;
 		synchronized(this) {
 			Cursor c = OmniataDBHelper.first(getDB(), name);
 			
-			if (c != null && c.moveToFirst()) {
-				e = instantiateE(c);
+			if (c != null) {
+				if (c.moveToFirst()) {
+					e = instantiateE(c);
+				}
 				c.close();
+			}
+		}
+		
+		return e;
+	}
+	
+	/**
+	 * Returns the head element of this queue without removing
+	 * 
+	 * @return The head of the queue or null if empty
+	 */
+	public E blockingPeek() throws InterruptedException{
+		E e = null;
+		
+		synchronized(this) {
+			e = peek();
+			while(e == null) {
+				wait();
+				e = peek();
 			}
 		}
 		
@@ -99,19 +120,22 @@ import android.database.sqlite.SQLiteOpenHelper;
 		synchronized (this) {
 			Cursor c = OmniataDBHelper.first(getDB(), name);
 			
-			if (c != null && c.moveToFirst() /*&& c.getCount() > 0 */) {
-
-				int id = c.getInt(0);
-				String data   = c.getString(1);
-				c.close();
+			if (c != null) {
+				if (c.moveToFirst() /*&& c.getCount() > 0 */) {
+					int id = c.getInt(0);
+					String data   = c.getString(1);
+					c.close();
 				
-				OmniataDBHelper.delete(getDB(), name, id);
+					OmniataDBHelper.delete(getDB(), name, id);
 				
-				if (--size == 0) {
-					OmniataDBHelper.resetAutoIncrement(getDB(), name);
+					if (--size == 0) {
+						OmniataDBHelper.resetAutoIncrement(getDB(), name);
+					}
+				
+					e = instantiateE(data);
+				} else {
+					c.close();
 				}
-				
-				e = instantiateE(data);
 			}
 		}
 		
@@ -172,8 +196,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 	}
 
 	@Override
-	public boolean offer(E e, long timeout, TimeUnit unit)
-			throws InterruptedException {
+	public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
 		return offer(e);
 	}
 
