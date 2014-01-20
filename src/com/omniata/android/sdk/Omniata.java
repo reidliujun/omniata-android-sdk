@@ -95,13 +95,6 @@ public class Omniata {
 		}
 	}
 	
-	public static void stop() {
-		instance = null;
-		/*synchronized(Omniata.class) {
-			instance._stop();
-		}*/
-	}
-	
 	/**
 	 * Sets the current user id used to track events
 	 * @param userId
