@@ -12,9 +12,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 /* package */ class PersistentBlockingQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
 	//private SQLiteDatabase db;
+	private static final String TAG = "PersistentBlockingQueue";
 	private SQLiteOpenHelper helper;
 	private String name;
 	private Class<E> type;
@@ -81,6 +83,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 		synchronized(this) {
 			e = peek();
 			while(e == null) {
+				Log.d(TAG, "Queue Empty");
 				wait();
 				e = peek();
 			}
@@ -222,6 +225,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 		synchronized (this) {
 			e = poll();
 			while(e == null) {
+				Log.d(TAG, "Queue Empty");
 				wait();
 				e = poll();
 			}

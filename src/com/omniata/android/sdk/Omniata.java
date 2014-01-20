@@ -4,6 +4,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -13,12 +14,11 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.provider.Settings;
-import android.util.Log;
 
 public class Omniata {
 	
-	private static final String TAG       		   = "Omniata";
-	private static final String EVENT_LOG 		   = "events";
+	private static final String TAG       = "Omniata";
+	private static final String EVENT_LOG = "events";
 	
 	private static Omniata instance;
 	
@@ -31,12 +31,22 @@ public class Omniata {
 	 * @param debug 	True if events should be tracked against the event-monitor
 	 */
 	public static void initialize(Activity activity, String apiKey, String userID, boolean debug) {
-		synchronized(Omniata.class) {
+		synchronized(Omniata.class) {	
 			if (instance == null) {
+				OmniataLog.i(TAG, "Initializing Omniata API");
 				instance = new Omniata(activity, apiKey, userID, debug);
-				instance.initializeWorkers();
 			}
+			
+			/*
+			 * Since this singleton may persist across application launches
+			 * we need to support re-initialization of the SDK
+			 */
+			instance._initialize(activity, apiKey, userID, debug);
 		}
+	}
+	
+	public static void setLogLevel(int priority) {
+		OmniataLog.setPriority(priority);
 	}
 	
 	/**
@@ -48,6 +58,10 @@ public class Omniata {
 	 */
 	public static void initialize(Activity activity, String apiKey, String userID) {
 		initialize(activity, apiKey, userID, false);
+	}
+	
+	public static String uniqueID() {
+		return UUID.randomUUID().toString();
 	}
 	
 	/**
@@ -83,6 +97,13 @@ public class Omniata {
 		synchronized(Omniata.class) {
 			instance._track("om_load", OmniataUtils.mergeJSON(getDeviceProperties(), parameters));
 		}
+	}
+	
+	public static void stop() {
+		instance = null;
+		/*synchronized(Omniata.class) {
+			instance._stop();
+		}*/
 	}
 	
 	/**
@@ -156,7 +177,7 @@ public class Omniata {
 			}
 			
 		} catch (JSONException e) {
-			Log.e(TAG, e.toString());
+			OmniataLog.e(TAG, e.toString());
 		}
 	}
 	
@@ -197,13 +218,13 @@ public class Omniata {
 			
 			while(true) {
 				try {
-					inputQueue.put(event);
+					eventBuffer.put(event);
 					break;
 				} catch (InterruptedException e) {
 				}
 			}
 		} catch (JSONException e) {
-			Log.e(TAG, e.toString());
+			OmniataLog.e(TAG, e.toString());
 		}
 	}
 	
@@ -266,28 +287,45 @@ public class Omniata {
 		this.userID = userId;
 	}
 	
-	private void initializeWorkers() {		
-		eventLogger.start();
-		eventWorker.start();
+	private Omniata(Activity activity, String apiKey, String userID, boolean debug) {
+
 	}
 	
-	private Omniata(Activity activity, String apiKey, String userID, boolean debug) {
-		Log.i(TAG, "Initializing Omniata with apiKey: " + apiKey + " and userID: " + userID);
+	private void _initialize(Activity activity, String apiKey, String userID, boolean debug) {
+		OmniataLog.i(TAG, "Initializing Omniata with apiKey: " + apiKey + " and userID: " + userID);
+
+		this.apiKey   	  = apiKey;
+		this.userID   	  = userID;
 		
-		this.activity			= activity;
-		this.apiKey   			= apiKey;
-		this.userID   			= userID;
-		inputQueue    			= new LinkedBlockingQueue<JSONObject>();
-		persistantQueue 		= new PersistentBlockingQueue<JSONObject>(activity, EVENT_LOG, JSONObject.class);
-		eventLogger     		= new Thread(new OmniataEventLogger(inputQueue, persistantQueue));
-		eventWorker   			= new Thread(new OmniataEventWorker(activity, persistantQueue, debug));
+		if (this.activity == null) {
+			this.activity = activity;
+		}
+		
+		if (eventBuffer == null) {
+			eventBuffer = new LinkedBlockingQueue<JSONObject>();
+		}
+		
+		if (eventLog == null) {
+			eventLog = new PersistentBlockingQueue<JSONObject>(activity, EVENT_LOG, JSONObject.class);
+		}
+		
+		if (eventLogger == null) {
+			eventLogger = new OmniataEventLogger(eventBuffer, eventLog);
+		}
+		
+		if (eventWorker == null) {
+			eventWorker = new OmniataEventWorker(activity, eventLog, debug);
+		}
+		
+		eventLogger.start();
+		eventWorker.start();
 	}
 	
 	private Activity 							activity;
 	private String 								apiKey;
 	private String 								userID;	
-	private BlockingQueue<JSONObject> 			inputQueue; // This queue is thread-safe
-	private PersistentBlockingQueue<JSONObject> persistantQueue;
-	private Thread 								eventWorker;
-	private Thread								eventLogger;
+	private BlockingQueue<JSONObject> 			eventBuffer;
+	private PersistentBlockingQueue<JSONObject> eventLog;
+	private OmniataEventLogger					eventLogger;
+	private OmniataEventWorker					eventWorker;
 }

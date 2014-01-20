@@ -16,6 +16,7 @@ import android.net.NetworkInfo;
 /* package */ class OmniataUtils {
 	static final String API 	  		   = "api.omniata.com";
 	static final String TEST_API  		   = "api-test.omniata.com";
+	//static final String LOCAL_TEST_API     = "10.0.2.2:8000";
 	
 	/* package */ static String getProtocol(boolean useSSL) {
 		return useSSL ? "http://" : "http://";
