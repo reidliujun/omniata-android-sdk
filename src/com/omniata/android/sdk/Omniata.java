@@ -60,10 +60,6 @@ public class Omniata {
 		initialize(activity, apiKey, userID, false);
 	}
 	
-	public static String uniqueID() {
-		return UUID.randomUUID().toString();
-	}
-	
 	/**
 	 * Tracks a parameterless event
 	 * 
