@@ -4,8 +4,6 @@ import java.util.concurrent.BlockingQueue;
 
 import org.json.JSONObject;
 
-import android.util.Log;
-
 class OmniataEventLogger implements Runnable {
 	private static final String TAG = "OmniataEventLogger";
 	
@@ -41,6 +39,6 @@ class OmniataEventLogger implements Runnable {
 			OmniataLog.e(TAG, "Thread interrupted");
 			Thread.currentThread().interrupt();
 		}
-		Log.i(TAG, "Thread done");
+		OmniataLog.i(TAG, "Thread done");
 	}
 }
