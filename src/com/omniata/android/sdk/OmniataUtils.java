@@ -14,6 +14,26 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
 /* package */ class OmniataUtils {
+	static final String API 	  		   = "api.omniata.com";
+	static final String TEST_API  		   = "api-test.omniata.com";
+	//static final String LOCAL_TEST_API     = "10.0.2.2:8000";
+	
+	/* package */ static String getProtocol(boolean useSSL) {
+		return useSSL ? "http://" : "http://";
+	}
+	
+	/* package */ static String getEventAPI(boolean useSSL, boolean debug) {
+		if (debug) {
+			return getProtocol(useSSL) + TEST_API + "/event";
+		} else {
+			return getProtocol(useSSL) + API + "/event";
+		}
+	}
+	
+	/* package */ static String getChannelAPI(boolean useSSL) {
+		return getProtocol(useSSL) + API + "/channel";
+	}
+	
 	/* package */ static String convertStreamToString(InputStream is) {
 	    Scanner s = new Scanner(is).useDelimiter("\\A");
 	    return s.hasNext() ? s.next() : "";
