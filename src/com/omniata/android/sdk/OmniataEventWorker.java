@@ -136,6 +136,7 @@ class OmniataEventWorker implements Runnable {
 			// Read & ignore the response. It's a good practise to read, from the server's 
 			// point of view it's cleaner when the client reads the response before
 			// closing the connection.s
+			@SuppressWarnings("unused")
 			int bytesRead = -1;
 			byte[] buffer = new byte[64];
 			while ((bytesRead = is.read(buffer)) >= 0) {}
