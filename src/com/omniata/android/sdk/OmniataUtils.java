@@ -19,7 +19,7 @@ import android.net.NetworkInfo;
 	//static final String LOCAL_TEST_API     = "10.0.2.2:8000";
 	
 	/* package */ static String getProtocol(boolean useSSL) {
-		return useSSL ? "http://" : "http://";
+		return useSSL ? "https://" : "http://";
 	}
 	
 	/* package */ static String getEventAPI(boolean useSSL, boolean debug) {
