@@ -147,7 +147,7 @@ public class Omniata {
 		JSONObject parameters = new JSONObject();
 		
 		try {
-			parameters.put("total", total);
+			parameters.put("total", total); // Java doesn't use locale-specific formatting, so this is safe
 			parameters.put("currency_code", currencyCode);
 			
 			if (additionalParams != null) {
@@ -221,7 +221,7 @@ public class Omniata {
 			
 			@Override
 			public void run() {
-				String uri = OmniataUtils.getChannelAPI(false) + "?api_key=" + apiKey + "uid=" + userID;
+				String uri = OmniataUtils.getChannelAPI(false) + "?api_key=" + apiKey + "&uid=" + userID + "&channel_id" + channelId;
 				
 				try {
 					URL url = new URL(uri);
