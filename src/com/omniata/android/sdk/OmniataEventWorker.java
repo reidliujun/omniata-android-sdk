@@ -141,6 +141,7 @@ class OmniataEventWorker implements Runnable {
 			byte[] buffer = new byte[64];
 			while ((bytesRead = is.read(buffer)) >= 0) {}
 			
+			// TODO: Switch statement might be more adequate to correctly handle different response codes
 			if (httpResponseCode >= 500) {
 				// 5xx Server Error
 				/* Will retry */
@@ -149,7 +150,10 @@ class OmniataEventWorker implements Runnable {
 				/* Will not retry */
 				return true;
 			} else if (httpResponseCode >= 300) {
-				// 3xx Redirection
+				// 3xx
+				if (httpResponseCode == 304) {
+					return true;  // Not modified
+				}
 			} else if (httpResponseCode >= 200) {
 				// 2xx Success
 				return true;

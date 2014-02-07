@@ -18,6 +18,7 @@ public class Omniata {
 	
 	private static final String TAG       = "Omniata";
 	private static final String EVENT_LOG = "events";
+	private static final String VERSION   = "1.1.0"; // TODO: Track SDK version
 	
 	private static Omniata instance;
 	
