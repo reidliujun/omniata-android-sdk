@@ -18,7 +18,7 @@ public class Omniata {
 	
 	private static final String TAG       = "Omniata";
 	private static final String EVENT_LOG = "events";
-	private static final String VERSION   = "1.1.0"; // TODO: Track SDK version
+	private static final String VERSION   = "1.1.0"; // TODO: Track SDK version?
 	
 	private static Omniata instance;
 	
@@ -29,9 +29,10 @@ public class Omniata {
 	 * @param apiKey	The api-key
 	 * @param userID	The user-id
 	 * @param debug 	True if events should be tracked against the event-monitor
+	 * @throws OmniataException 
 	 */
-	public static void initialize(Activity activity, String apiKey, String userID, boolean debug) {
-		synchronized(Omniata.class) {	
+	public static void initialize(Activity activity, String apiKey, String userID, boolean debug) throws IllegalArgumentException{
+		synchronized(Omniata.class) {			
 			if (instance == null) {
 				OmniataLog.i(TAG, "Initializing Omniata API");
 				instance = new Omniata(activity, apiKey, userID, debug);
@@ -55,8 +56,9 @@ public class Omniata {
 	 * @param activity
 	 * @param api_key
 	 * @param user_id
+	 * @throws OmniataException 
 	 */
-	public static void initialize(Activity activity, String apiKey, String userID) {
+	public static void initialize(Activity activity, String apiKey, String userID) throws IllegalArgumentException {
 		initialize(activity, apiKey, userID, false);
 	}
 	
@@ -64,8 +66,9 @@ public class Omniata {
 	 * Tracks a parameterless event
 	 * 
 	 * @param eventType
+	 * @throws OmniataException 
 	 */
-	public static void track(String eventType) {
+	public static void track(String eventType) throws IllegalArgumentException, IllegalStateException {
 		track(eventType, null);
 	}
 	
@@ -74,33 +77,43 @@ public class Omniata {
 	 * 
 	 * @param eventType
 	 * @param parameters
+	 * @throws OmniataException 
 	 */
-	public static void track(String eventType, JSONObject parameters) {
+	public static void track(String eventType, JSONObject parameters) throws IllegalArgumentException, IllegalStateException {
 		synchronized(Omniata.class) {
+			assertInitialized();
 			instance._track(eventType, parameters);
+		}
+	}
+	
+	public static void assertInitialized() throws IllegalStateException{
+		if (instance == null) {
+			throw new IllegalStateException("Uninitialized SDK");
 		}
 	}
 	
 	/**
 	 * Tracks a load event. 
 	 * Should be called upon app start.
+	 * @throws OmniataException 
 	 */
-	public static void trackLoad() {
+	public static void trackLoad() throws IllegalStateException {
 		trackLoad(getDeviceProperties());
 	}
 	
-	public static void trackLoad(JSONObject parameters) {
-		synchronized(Omniata.class) {
-			instance._track("om_load", OmniataUtils.mergeJSON(getDeviceProperties(), parameters));
-		}
+	public static void trackLoad(JSONObject parameters) throws IllegalStateException {
+		track("om_load", OmniataUtils.mergeJSON(getDeviceProperties(), parameters));
 	}
 	
 	/**
 	 * Sets the current user id used to track events
 	 * @param userId
+	 * @throws OmniataException 
 	 */
-	public static void setUserId(String userId) {
+	public static void setUserId(String userId) throws IllegalArgumentException, IllegalStateException {
 		synchronized(Omniata.class) {
+			assertInitialized();
+			OmniataUtils.assertUserIdValid(userId);			
 			instance._setUserId(userId);
 		}
 	}
@@ -108,9 +121,12 @@ public class Omniata {
 	/**
 	 * Sets the current API key used to track events
 	 * @param apiKey
+	 * @throws OmniataException 
 	 */
-	public static void setApiKey(String apiKey) {
+	public static void setApiKey(String apiKey) throws IllegalArgumentException, IllegalStateException {
 		synchronized(Omniata.class) {
+			assertInitialized();
+			OmniataUtils.assertApiKeyValid(apiKey);
 			instance._setApiKey(apiKey);
 		}
 	}
@@ -121,8 +137,9 @@ public class Omniata {
 	 * @param channelId The id of this channel
 	 * @param handler An object implementing OmniataChannelResponseHandler
 	 */
-	public static void channel(int channelId, OmniataChannelResponseHandler handler) {
+	public static void channel(int channelId, OmniataChannelResponseHandler handler) throws IllegalStateException {
 		synchronized(Omniata.class) {
+			assertInitialized();			
 			instance._channel(channelId, handler);
 		}
 	}
@@ -132,6 +149,7 @@ public class Omniata {
 	 * 
 	 * @param total Revenue amount in currency code
 	 * @param currencyCode A three letter currency code following ISO-4217 spec.
+	 * @throws OmniataException 
 	 */
 	public static void trackRevenue(double total, String currencyCode) {
 		trackRevenue(total, currencyCode, null);
@@ -143,9 +161,14 @@ public class Omniata {
 	 * @param total Revenue amount in currency code
 	 * @param currencyCode A three letter currency code following ISO-4217 spec.
 	 * @param additionalParams Additional parameters to be tracked with event
+	 * @throws OmniataException 
 	 */
-	public static void trackRevenue(double total, String currencyCode, JSONObject additionalParams) {
+	public static void trackRevenue(double total, String currencyCode, JSONObject additionalParams) throws IllegalStateException {
 		JSONObject parameters = new JSONObject();
+		
+		if (instance == null) {
+			throw new IllegalStateException("Uninitialized SDK");
+		}
 		
 		try {
 			parameters.put("total", total); // Java doesn't use locale-specific formatting, so this is safe
@@ -161,12 +184,14 @@ public class Omniata {
 				}
 			}
 			
-			synchronized(Omniata.class) {
-				instance._track("om_revenue", parameters);
-			}
+			track("om_revenue", parameters);
 			
 		} catch (JSONException e) {
 			OmniataLog.e(TAG, e.toString());
+		} catch (IllegalArgumentException e) {
+			// Should never happen
+		} catch (IllegalStateException e) {
+			throw e;
 		}
 	}
 	
@@ -191,8 +216,10 @@ public class Omniata {
 		return properties;
 	}
 	
-	protected void _track(String eventType, JSONObject parameters) {
+	protected void _track(String eventType, JSONObject parameters) throws IllegalArgumentException {
 		JSONObject event;
+		
+		OmniataUtils.assertValidEventType(eventType);
 		
 		try {			
 			if (parameters != null) {
@@ -280,8 +307,15 @@ public class Omniata {
 
 	}
 	
-	private void _initialize(Activity activity, String apiKey, String userID, boolean debug) {
+	private void _initialize(Activity activity, String apiKey, String userID, boolean debug) throws IllegalArgumentException, IllegalStateException {
 		OmniataLog.i(TAG, "Initializing Omniata with apiKey: " + apiKey + " and userID: " + userID);
+		
+		if (activity == null) {
+			throw new IllegalArgumentException("Activity is null");
+		}
+		
+		OmniataUtils.assertApiKeyValid(apiKey);
+		OmniataUtils.assertUserIdValid(userID);
 
 		this.apiKey   	  = apiKey;
 		this.userID   	  = userID;
