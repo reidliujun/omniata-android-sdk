@@ -116,6 +116,13 @@ class OmniataEventWorker implements Runnable {
 		HttpURLConnection connection = null;
 
 		try {
+			// om_delta
+			String creationTimeString = event.remove("om_creation_time");
+			if (creationTimeString != null) {
+				String omDelta = "" + ((System.currentTimeMillis() - Long.parseLong(creationTimeString)) / 1000);
+				event.put("om_delta", omDelta);
+			}
+			
 			String query    = OmniataUtils.jsonToQueryString(event);
 			String eventURL = OmniataUtils.getEventAPI(false, debug) + "?" + query;
 			
