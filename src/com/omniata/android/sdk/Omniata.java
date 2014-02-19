@@ -228,7 +228,7 @@ public class Omniata {
 			
 			@Override
 			public void run() {
-				String uri = OmniataUtils.getChannelAPI(false) + "?api_key=" + apiKey + "&uid=" + userID + "&channel_id" + channelId;
+				String uri = OmniataUtils.getChannelAPI(true) + "?api_key=" + apiKey + "&uid=" + userID + "&channel_id" + channelId;
 				
 				try {
 					URL url = new URL(uri);

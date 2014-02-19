@@ -128,7 +128,7 @@ class OmniataEventWorker implements Runnable {
 			}
 			
 			String query    = OmniataUtils.jsonToQueryString(event);
-			String eventURL = OmniataUtils.getEventAPI(false, debug) + "?" + query;
+			String eventURL = OmniataUtils.getEventAPI(true, debug) + "?" + query;
 			
 			OmniataLog.i(TAG, "Calling event endpoint: " + eventURL);
 			URL url = new URL(eventURL);
