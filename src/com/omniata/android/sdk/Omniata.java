@@ -97,14 +97,12 @@ public class Omniata {
 	 * Should be called upon app start.
 	 * @throws OmniataException 
 	 */
-	public static void trackLoad() {
+	public static void trackLoad() throws IllegalStateException{
 		trackLoad(getAutomaticParameters());
 	}
 	
-	public static void trackLoad(JSONObject parameters) {
-		synchronized(Omniata.class) {
-			instance._track("om_load", OmniataUtils.mergeJSON(getAutomaticParameters(), parameters));
-		}
+	public static void trackLoad(JSONObject parameters) throws IllegalStateException{
+		track("om_load", OmniataUtils.mergeJSON(getAutomaticParameters(), parameters));
 	}
 	
 	/**
@@ -153,7 +151,7 @@ public class Omniata {
 	 * @param currencyCode A three letter currency code following ISO-4217 spec.
 	 * @throws OmniataException 
 	 */
-	public static void trackRevenue(double total, String currencyCode) {
+	public static void trackRevenue(double total, String currencyCode) throws IllegalStateException{
 		trackRevenue(total, currencyCode, null);
 	}
 	
@@ -167,11 +165,7 @@ public class Omniata {
 	 */
 	public static void trackRevenue(double total, String currencyCode, JSONObject additionalParams) throws IllegalStateException {
 		JSONObject parameters = new JSONObject();
-		
-		if (instance == null) {
-			throw new IllegalStateException("Uninitialized SDK");
-		}
-		
+
 		try {
 			parameters.put("total", total); // Java doesn't use locale-specific formatting, so this is safe
 			parameters.put("currency_code", currencyCode);
@@ -190,10 +184,6 @@ public class Omniata {
 			
 		} catch (JSONException e) {
 			OmniataLog.e(TAG, e.toString());
-		} catch (IllegalArgumentException e) {
-			// Should never happen
-		} catch (IllegalStateException e) {
-			throw e;
 		}
 	}
 	
