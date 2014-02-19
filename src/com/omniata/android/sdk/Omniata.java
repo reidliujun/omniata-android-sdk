@@ -92,7 +92,7 @@ public class Omniata {
 		}
 	}
 	
-	public static void assertInitialized() throws IllegalStateException{
+	private static void assertInitialized() throws IllegalStateException{
 		if (instance == null) {
 			throw new IllegalStateException("Uninitialized SDK");
 		}
