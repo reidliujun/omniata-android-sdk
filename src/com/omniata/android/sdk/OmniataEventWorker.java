@@ -6,6 +6,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
@@ -117,17 +118,20 @@ class OmniataEventWorker implements Runnable {
 
 		try {
 			// om_delta
-			String creationTimeString = event.remove("om_creation_time");
-			if (creationTimeString != null) {
-				String omDelta = "" + ((System.currentTimeMillis() - Long.parseLong(creationTimeString)) / 1000);
+			try {
+				long creationTime = event.getLong("om_creation_time");
+				long omDelta = (System.currentTimeMillis() - creationTime) / 1000;
 				event.put("om_delta", omDelta);
+				event.remove("om_creation_time");
+			} catch (JSONException e) {
+				OmniataLog.e(TAG, e.toString());
 			}
 			
 			String query    = OmniataUtils.jsonToQueryString(event);
 			String eventURL = OmniataUtils.getEventAPI(false, debug) + "?" + query;
 			
 			OmniataLog.i(TAG, "Calling event endpoint: " + eventURL);
-			URL url 		= new URL(eventURL);
+			URL url = new URL(eventURL);
 
 			connection = (HttpURLConnection)url.openConnection();
 

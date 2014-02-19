@@ -177,7 +177,7 @@ public class Omniata {
 		try {
 			// Standard automatic parameters
 			properties.put("om_sdk_version", SDK_VERSION);
-			properties.put("om_os_version", android.os.Build.VERSION);
+			properties.put("om_os_version", android.os.Build.VERSION.SDK_INT);
 			properties.put("om_platform", "android");
 			properties.put("om_device", android.os.Build.MODEL);
 			
@@ -209,7 +209,7 @@ public class Omniata {
 			event.put("om_event_type", eventType);
 			event.put("api_key", apiKey);
 			event.put("uid", userID);
-			event.put("om_creation_time", "" + System.currentTimeMillis());
+			event.put("om_creation_time", System.currentTimeMillis());
 			
 			while(true) {
 				try {
