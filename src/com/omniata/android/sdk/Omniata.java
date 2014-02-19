@@ -18,7 +18,7 @@ public class Omniata {
 	
 	private static final String TAG       = "Omniata";
 	private static final String EVENT_LOG = "events";
-	private static final String VERSION   = "1.1.0"; // TODO: Track SDK version?
+	private static final String SDK_VERSION = "android-1.0";
 	
 	private static Omniata instance;
 	
@@ -97,12 +97,14 @@ public class Omniata {
 	 * Should be called upon app start.
 	 * @throws OmniataException 
 	 */
-	public static void trackLoad() throws IllegalStateException {
-		trackLoad(getDeviceProperties());
+	public static void trackLoad() {
+		trackLoad(getAutomaticParameters());
 	}
 	
-	public static void trackLoad(JSONObject parameters) throws IllegalStateException {
-		track("om_load", OmniataUtils.mergeJSON(getDeviceProperties(), parameters));
+	public static void trackLoad(JSONObject parameters) {
+		synchronized(Omniata.class) {
+			instance._track("om_load", OmniataUtils.mergeJSON(getAutomaticParameters(), parameters));
+		}
 	}
 	
 	/**
@@ -195,15 +197,20 @@ public class Omniata {
 		}
 	}
 	
-	protected static JSONObject getDeviceProperties() {
+	protected static JSONObject getAutomaticParameters() {
 		JSONObject properties = new JSONObject();
 		Locale locale = Locale.getDefault();
 		
 		try {
-			properties.put("om_platform", "Android");
+			// Standard automatic parameters
+			properties.put("om_sdk_version", SDK_VERSION);
+			properties.put("om_os_version", android.os.Build.VERSION.SDK_INT);
+			properties.put("om_platform", "android");
+			properties.put("om_device", android.os.Build.MODEL);
+			
+			// Android-specific parameters
 			properties.put("om_android_id", Settings.Secure.ANDROID_ID);
 			properties.put("om_android_serial", android.os.Build.SERIAL);
-			properties.put("om_android_model", android.os.Build.MODEL);
 			properties.put("om_android_device", android.os.Build.DEVICE);
 			properties.put("om_android_hardware", android.os.Build.HARDWARE);
 		
@@ -231,6 +238,7 @@ public class Omniata {
 			event.put("om_event_type", eventType);
 			event.put("api_key", apiKey);
 			event.put("uid", userID);
+			event.put("om_creation_time", System.currentTimeMillis());
 			
 			while(true) {
 				try {
@@ -249,7 +257,7 @@ public class Omniata {
 			
 			@Override
 			public void run() {
-				String uri = OmniataUtils.getChannelAPI(false) + "?api_key=" + apiKey + "&uid=" + userID + "&channel_id" + channelId;
+				String uri = OmniataUtils.getChannelAPI(true) + "?api_key=" + apiKey + "&uid=" + userID + "&channel_id" + channelId;
 				
 				try {
 					URL url = new URL(uri);
