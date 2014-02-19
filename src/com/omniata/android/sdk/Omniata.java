@@ -29,7 +29,9 @@ public class Omniata {
 	 * @param apiKey	The api-key
 	 * @param userID	The user-id
 	 * @param debug 	True if events should be tracked against the event-monitor
-	 * @throws OmniataException 
+	 * @throws IllegalArgumentException if activity is null
+	 * @throws IllegalArgumentException if apiKey is null or empty
+	 * @throws IllegalArgumentException if userID is null or empty 
 	 */
 	public static void initialize(Activity activity, String apiKey, String userID, boolean debug) throws IllegalArgumentException{
 		synchronized(Omniata.class) {			
@@ -56,7 +58,9 @@ public class Omniata {
 	 * @param activity
 	 * @param api_key
 	 * @param user_id
-	 * @throws OmniataException 
+	 * @throws IllegalArgumentException if activity is null
+	 * @throws IllegalArgumentException if apiKey is null or empty
+	 * @throws IllegalArgumentException if userID is null or empty
 	 */
 	public static void initialize(Activity activity, String apiKey, String userID) throws IllegalArgumentException {
 		initialize(activity, apiKey, userID, false);
@@ -66,7 +70,8 @@ public class Omniata {
 	 * Tracks a parameterless event
 	 * 
 	 * @param eventType
-	 * @throws OmniataException 
+	 * @throws IllegalArgumentException if eventType is null or empty
+	 * @throws IllegalStateException if SDK not initialized 
 	 */
 	public static void track(String eventType) throws IllegalArgumentException, IllegalStateException {
 		track(eventType, null);
@@ -77,7 +82,8 @@ public class Omniata {
 	 * 
 	 * @param eventType
 	 * @param parameters
-	 * @throws OmniataException 
+	 * @throws IllegalArgumentException if eventType is null or empty
+	 * @throws IllegalStateException if SDK not initialized  
 	 */
 	public static void track(String eventType, JSONObject parameters) throws IllegalArgumentException, IllegalStateException {
 		synchronized(Omniata.class) {
@@ -95,12 +101,17 @@ public class Omniata {
 	/**
 	 * Tracks a load event. 
 	 * Should be called upon app start.
-	 * @throws OmniataException 
+	 * @throws IllegalStateException if SDK not initialized 
 	 */
 	public static void trackLoad() throws IllegalStateException{
 		trackLoad(getAutomaticParameters());
 	}
 	
+	/**
+	 * Tracks a load event with additional parameters
+	 * @param parameters Additional parameters to track with event
+	 * @throws IllegalStateException if SDK not initialized
+	 */
 	public static void trackLoad(JSONObject parameters) throws IllegalStateException{
 		track("om_load", OmniataUtils.mergeJSON(getAutomaticParameters(), parameters));
 	}
@@ -108,7 +119,8 @@ public class Omniata {
 	/**
 	 * Sets the current user id used to track events
 	 * @param userId
-	 * @throws OmniataException 
+	 * @throws IllegalArgumentException if userID is null or empty
+	 * @throws IllegalStateException if SDK not initialized 
 	 */
 	public static void setUserId(String userId) throws IllegalArgumentException, IllegalStateException {
 		synchronized(Omniata.class) {
@@ -121,7 +133,8 @@ public class Omniata {
 	/**
 	 * Sets the current API key used to track events
 	 * @param apiKey
-	 * @throws OmniataException 
+	 * @throws IllegalArgumentException if apiKey is null or empty
+	 * @throws IllegalStateException if SDK not initialized 
 	 */
 	public static void setApiKey(String apiKey) throws IllegalArgumentException, IllegalStateException {
 		synchronized(Omniata.class) {
@@ -136,6 +149,7 @@ public class Omniata {
 	 * 
 	 * @param channelId The id of this channel
 	 * @param handler An object implementing OmniataChannelResponseHandler
+	 * @throws IllegalStateException if SDK not initialized
 	 */
 	public static void channel(int channelId, OmniataChannelResponseHandler handler) throws IllegalStateException {
 		synchronized(Omniata.class) {
@@ -149,9 +163,10 @@ public class Omniata {
 	 * 
 	 * @param total Revenue amount in currency code
 	 * @param currencyCode A three letter currency code following ISO-4217 spec.
-	 * @throws OmniataException 
+	 * @throws IllegalStateException if SDK not initialized 
 	 */
-	public static void trackRevenue(double total, String currencyCode) throws IllegalStateException{
+	public static void trackRevenue(double total, String currencyCode) throws IllegalStateException {
+		// TODO: add currency code validation
 		trackRevenue(total, currencyCode, null);
 	}
 	
@@ -161,7 +176,7 @@ public class Omniata {
 	 * @param total Revenue amount in currency code
 	 * @param currencyCode A three letter currency code following ISO-4217 spec.
 	 * @param additionalParams Additional parameters to be tracked with event
-	 * @throws OmniataException 
+	 * @throws IllegalStateException if SDK not initialized 
 	 */
 	public static void trackRevenue(double total, String currencyCode, JSONObject additionalParams) throws IllegalStateException {
 		JSONObject parameters = new JSONObject();
