@@ -104,7 +104,7 @@ public class Omniata {
 	 * @throws IllegalStateException if SDK not initialized 
 	 */
 	public static void trackLoad() throws IllegalStateException{
-		trackLoad(getAutomaticParameters());
+		trackLoad(null);
 	}
 	
 	/**
@@ -112,7 +112,10 @@ public class Omniata {
 	 * @param parameters Additional parameters to track with event
 	 * @throws IllegalStateException if SDK not initialized
 	 */
-	public static void trackLoad(JSONObject parameters) throws IllegalStateException{
+	public static void trackLoad(JSONObject parameters) throws IllegalStateException {
+		if (parameters == null) {
+			parameters = new JSONObject();
+		}
 		track("om_load", OmniataUtils.mergeJSON(getAutomaticParameters(), parameters));
 	}
 	
