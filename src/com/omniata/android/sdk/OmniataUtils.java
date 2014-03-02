@@ -30,6 +30,24 @@ import android.net.NetworkInfo;
 		}
 	}
 	
+	/* package */ static void assertApiKeyValid(String apiKey) throws IllegalArgumentException{
+		if(apiKey == null || apiKey == "") {
+			throw new IllegalArgumentException("API key is invalid");
+		}
+	}
+	
+	/* package */ static void assertUserIdValid(String userId) throws IllegalArgumentException{
+		if(userId == null || userId == "") {
+			throw new IllegalArgumentException("API key is invalid");
+		}
+	}
+	
+	/* package */ static void assertValidEventType(String eventType) throws IllegalArgumentException{
+		if(eventType == null || eventType == "") {
+			throw new IllegalArgumentException("Event Type is invalid");
+		}
+	}
+	
 	/* package */ static String getChannelAPI(boolean useSSL) {
 		return getProtocol(useSSL) + API + "/channel";
 	}
