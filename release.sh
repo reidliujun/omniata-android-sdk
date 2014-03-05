@@ -49,7 +49,7 @@ echo "Commiting and pushing"
 cd $PAGES_REPOSITY_DIR
 git pull
 git add $PAGES_DIR_RELATIVE
-git commit -m "iOS SDK ${VERSION}" $PAGES_DIR_RELATIVE
+git commit -m "Android SDK ${VERSION}" $PAGES_DIR_RELATIVE
 git push -u origin master
 
 echo "Ready version $VERSION"
