@@ -205,6 +205,20 @@ public class Omniata {
 		}
 	}
 	
+	public static void enablePushNotifications(String registrationId) {
+		JSONObject params = new JSONObject();
+		try {
+			params.put("om_registration_id", registrationId);
+			track("om_gcm_enable", params);
+		} catch (JSONException e) {
+			
+		}
+	}
+	
+	public static void disablePushNotifications() {
+		track("om_gcm_disable");
+	}
+	
 	protected static JSONObject getAutomaticParameters() {
 		JSONObject properties = new JSONObject();
 		Locale locale = Locale.getDefault();
