@@ -24,7 +24,7 @@ import android.net.NetworkInfo;
 	
 	/* package */ static String getEventAPI(boolean useSSL, boolean debug) {
 		if (debug) {
-			return getProtocol(useSSL) + TEST_API + "/event";
+			return getProtocol(false) + TEST_API + "/event";  // Test API is http only
 		} else {
 			return getProtocol(useSSL) + API + "/event";
 		}
@@ -53,8 +53,12 @@ import android.net.NetworkInfo;
 	}
 	
 	/* package */ static String convertStreamToString(InputStream is) {
-	    Scanner s = new Scanner(is).useDelimiter("\\A");
-	    return s.hasNext() ? s.next() : "";
+		String result;
+	    Scanner s = new Scanner(is);
+	    s.useDelimiter("\\A");
+	    result = s.hasNext() ? s.next() : "";
+	    s.close();
+	    return result;
 	}
 	
 	/* package */ static boolean isConnected(Context context) {
