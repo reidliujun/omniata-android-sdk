@@ -18,7 +18,7 @@ public class Omniata {
 	
 	private static final String TAG       = "Omniata";
 	private static final String EVENT_LOG = "events";
-	private static final String SDK_VERSION = "android-1.0.1";
+	private static final String SDK_VERSION = "android-1.1.0";
 	
 	private static Omniata instance;
 	
@@ -203,6 +203,20 @@ public class Omniata {
 		} catch (JSONException e) {
 			OmniataLog.e(TAG, e.toString());
 		}
+	}
+	
+	public static void enablePushNotifications(String registrationId) {
+		JSONObject params = new JSONObject();
+		try {
+			params.put("om_registration_id", registrationId);
+			track("om_gcm_enable", params);
+		} catch (JSONException e) {
+			OmniataLog.e(TAG, e.toString());
+		}
+	}
+	
+	public static void disablePushNotifications() {
+		track("om_gcm_disable");
 	}
 	
 	protected static JSONObject getAutomaticParameters() {
