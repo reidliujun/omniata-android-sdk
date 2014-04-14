@@ -211,7 +211,7 @@ public class Omniata {
 			params.put("om_registration_id", registrationId);
 			track("om_gcm_enable", params);
 		} catch (JSONException e) {
-			
+			OmniataLog.e(TAG, e.toString());
 		}
 	}
 	
