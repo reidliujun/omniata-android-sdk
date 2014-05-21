@@ -13,12 +13,13 @@ import android.app.Activity;
 
 class OmniataEventWorker implements Runnable {
 	private static final String TAG 			      	= "OmniataEventWorker";
-	private static final int    CONNECTION_TIMEOUT 		= 30 * 1000;
-	private static final int    READ_TIMEOUT 	   		= 30 * 1000;
-	private static final int	SLEEP_TIME		   		= 1 * 1000;
-	private static final int	MAX_SLEEP		   		= 64 * 1000;
-	private static final int	RETRY_CONNECTIVITY_TIME = 16 * 1000;
-	private static final int	MIN_TIME_BETWEEN_EVENTS = 1 * 1000;
+	private static final int    SECONDS 				= 1000;
+	private static final int    CONNECTION_TIMEOUT 		= 30 * SECONDS;
+	private static final int    READ_TIMEOUT 	   		= 30 * SECONDS;
+	private static final int	RETRY_CONNECTIVITY_TIME = 16 * SECONDS;
+	private static final int	MIN_TIME_BETWEEN_EVENTS = 1  * SECONDS;
+	private static final int    MAX_BACKOFF_EXP         = 9;				// 2^9 = 512 Seconds ~ 8 minutes
+	private static final int    MAX_RETRIES             = 30;
 
 	private Activity 							activity;
 	private int 								connectionTimeout;
@@ -29,6 +30,12 @@ class OmniataEventWorker implements Runnable {
 	private Thread								worker;
 	private boolean								isRunning;
 	private boolean								isStarted;
+	
+	enum EventStatus {
+		SUCCESS,
+		RETRY,
+		DISCARD
+	};
 
 	public OmniataEventWorker(Activity activity, PersistentBlockingQueue<JSONObject> eventLog, boolean debug) {
 		this.activity 		   = activity;
@@ -52,7 +59,8 @@ class OmniataEventWorker implements Runnable {
 	 * Will back off exponentially to prevent pegging servers in case of downtime
 	 */
 	protected int sleepTime() {
-		return Math.min(MAX_SLEEP, SLEEP_TIME << retries);
+		// We'll cap the sleep time to
+		return (1 << Math.min(MAX_BACKOFF_EXP, retries)) * SECONDS;
 	}
 
 	/**
@@ -104,16 +112,30 @@ class OmniataEventWorker implements Runnable {
 			Thread.sleep(timeToWait);
 		}
 
-		if (sendEvent(event)) {
+		switch(sendEvent(event)) {
+		case RETRY:
+			retries++;
+			if (retries < MAX_RETRIES) {
+				throttle();
+				break;
+			} else {
+				// Fall through
+			}
+			
+		case SUCCESS:
+		case DISCARD:
 			retries = 0;
 			eventLog.take();
-		} else {
-			retries++;
-			throttle();
+			break;
 		}
 	}
 
-	protected boolean sendEvent(JSONObject event) {
+	/**
+	 * Attempts to send an event
+	 * @param event
+	 * @return false if retry should be attempted
+	 */	
+	protected EventStatus sendEvent(JSONObject event) {
 		HttpURLConnection connection = null;
 
 		try {
@@ -150,37 +172,45 @@ class OmniataEventWorker implements Runnable {
 			@SuppressWarnings("unused")
 			int bytesRead = -1;
 			byte[] buffer = new byte[64];
-			while ((bytesRead = is.read(buffer)) >= 0) {}
+			while ((bytesRead = is.read(buffer)) >= 0) {}		
 			
 			// TODO: Switch statement might be more adequate to correctly handle different response codes
-			if (httpResponseCode >= 500) {
-				// 5xx Server Error
+			
+			// 5xx Server Error
+			if (httpResponseCode >= 500) { 
 				/* Will retry */
-			} else if (httpResponseCode >= 400) {
-				// 4xx Client Error
-				/* Will not retry */
-				return true;
-			} else if (httpResponseCode >= 300) {
-				// 3xx
+				return EventStatus.RETRY;
+			} 
+			// 4xx Client Error
+			else if (httpResponseCode >= 400) {
+				return EventStatus.DISCARD;
+			} 
+			// 3xx Redirection
+			else if (httpResponseCode >= 300) {
 				if (httpResponseCode == 304) {
-					return true;  // Not modified
+					return EventStatus.SUCCESS;
+				} else {
+					return EventStatus.DISCARD;
 				}
-			} else if (httpResponseCode >= 200) {
-				// 2xx Success
-				return true;
-			} else {
-				// 1xx Informational
+			} 
+			// 2xx Success
+			else if (httpResponseCode >= 200) {
+				return EventStatus.SUCCESS;
+			} 
+			// 1xx Informational
+			else {
+				return EventStatus.DISCARD;
 			}		
 		} catch (MalformedURLException e) {
 			OmniataLog.e(TAG, e.toString());
+			return EventStatus.DISCARD;
 		} catch (IOException e) {
 			OmniataLog.e(TAG, e.toString());
+			return EventStatus.RETRY;
 		} finally {
 			if (connection != null) {
 				connection.disconnect();
 			}
 		}
-
-		return false;
 	}
 }
