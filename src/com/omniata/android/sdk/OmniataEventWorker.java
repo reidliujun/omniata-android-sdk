@@ -59,7 +59,7 @@ class OmniataEventWorker implements Runnable {
 	 * Will back off exponentially to prevent pegging servers in case of downtime
 	 */
 	protected int sleepTime() {
-		// We'll cap the sleep time to
+		// We'll cap the retry sleep time to a maximum of ~8 minutes, fixes OP-1618
 		return (1 << Math.min(MAX_BACKOFF_EXP, retries)) * SECONDS;
 	}
 
@@ -172,10 +172,8 @@ class OmniataEventWorker implements Runnable {
 			@SuppressWarnings("unused")
 			int bytesRead = -1;
 			byte[] buffer = new byte[64];
-			while ((bytesRead = is.read(buffer)) >= 0) {}		
-			
-			// TODO: Switch statement might be more adequate to correctly handle different response codes
-			
+			while ((bytesRead = is.read(buffer)) >= 0) {}
+
 			// 5xx Server Error
 			if (httpResponseCode >= 500) { 
 				/* Will retry */
