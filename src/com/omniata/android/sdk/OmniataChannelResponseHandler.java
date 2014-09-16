@@ -6,3 +6,5 @@ public interface OmniataChannelResponseHandler {
 	public void onSuccess(int channel, JSONArray content);
 	public void onError(int channel, Exception e);
 }
+
+

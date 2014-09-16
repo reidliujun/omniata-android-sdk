@@ -4,6 +4,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -23,7 +26,7 @@ public class Omniata {
 	private static Omniata instance;
 	
 	/**
-	 * Initializes the Omniata API
+	 * Initializes the Omniata API with single apiKey and userId
 	 * 
 	 * @param activity
 	 * @param apiKey	The api-key
@@ -33,6 +36,7 @@ public class Omniata {
 	 * @throws IllegalArgumentException if apiKey is null or empty
 	 * @throws IllegalArgumentException if userID is null or empty 
 	 */
+		
 	public static void initialize(Activity activity, String apiKey, String userID, boolean debug) throws IllegalArgumentException{
 		synchronized(Omniata.class) {			
 			if (instance == null) {
@@ -45,6 +49,31 @@ public class Omniata {
 			 * we need to support re-initialization of the SDK
 			 */
 			instance._initialize(activity, apiKey, userID, debug);
+		}
+	}
+	
+	/**
+	 * Initializes the Omniata API with multiple apiKeys and userIds
+	 * 
+	 * @param activity
+	 * @param userInfo	The api-key:the user-id
+	 * @param debug 	True if events should be tracked against the event-monitor
+	 * @throws IllegalArgumentException if activity is null
+	 * @throws IllegalArgumentException if apiKey is null or empty
+	 * @throws IllegalArgumentException if userID is null or empty 
+	 */
+	public static void initialize(Activity activity, Map<String, String> userInfo, boolean debug) throws IllegalArgumentException{
+		synchronized(Omniata.class) {			
+			if (instance == null) {
+				OmniataLog.i(TAG, "Initializing Omniata API");
+				instance = new Omniata(activity, userInfo, debug);
+			}
+			
+			/*
+			 * Since this singleton may persist across application launches
+			 * we need to support re-initialization of the SDK
+			 */
+			instance._initialize(activity, userInfo, debug);
 		}
 	}
 	
@@ -189,7 +218,6 @@ public class Omniata {
 			parameters.put("currency_code", currencyCode);
 			
 			if (additionalParams != null) {
-				@SuppressWarnings("unchecked")
 				Iterator<String> i = (Iterator<String>)additionalParams.keys();
 				while(i.hasNext()) {
 					String key = (String)i.next();
@@ -258,8 +286,18 @@ public class Omniata {
 			}
 			
 			event.put("om_event_type", eventType);
-			event.put("api_key", apiKey);
-			event.put("uid", userID);
+			
+			
+			if (apiKeysStr!=null){
+				event.put("api_key", apiKeysStr);
+				event.put("uid", userIdsStr);
+				OmniataLog.i(TAG, event.toString());
+			}else{
+				event.put("api_key", apiKey);
+				event.put("uid", userID);
+				OmniataLog.i(TAG, event.toString());
+			}
+			
 			event.put("om_creation_time", System.currentTimeMillis());
 			
 			while(true) {
@@ -333,10 +371,54 @@ public class Omniata {
 		this.userID = userId;
 	}
 	
+	/** 
+	 * Format the apiKeys and userIds inside of URL
+	 * @param apiKeysStr the format string for apiKeys
+	 * @param userIdsStr the format string for userIds
+	 */
+	private void _getStrfromMap(Map <String, String> userInfo){
+		
+		this.apiKeys = new String[userInfo.size()];
+    	this.userIds = new String[userInfo.size()];
+    	this.apiKeysStr = "";
+    	this.userIdsStr = "";
+    	int i = 0;
+        Set<Entry<String, String>> entries = userInfo.entrySet();
+        Iterator<Entry<String, String>> iterator = entries.iterator();
+        while(iterator.hasNext()){
+        	@SuppressWarnings("rawtypes")
+			Map.Entry mapping = (Map.Entry)iterator.next();
+        	apiKeys[i] = mapping.getKey().toString(); 
+        	userIds[i] = userInfo.get(apiKeys[i]);
+        	i++;
+        }
+        
+    	for (i=0;i<apiKeys.length;i++){
+			if (i!= apiKeys.length-1){
+				apiKeysStr = apiKeysStr + apiKeys[i]+",";
+				userIdsStr = userIdsStr + userIds[i]+",";
+			}else{
+				apiKeysStr = apiKeysStr + apiKeys[i];
+				userIdsStr = userIdsStr + userIds[i];
+			}
+    	}
+    	
+	}
+	
 	private Omniata(Activity activity, String apiKey, String userID, boolean debug) {
 
 	}
+	private Omniata(Activity activity, Map<String, String> userInfo, boolean debug) {
+
+	}
 	
+	/** 
+	 * Initialization for single apiKey and userId
+	 * @param activity
+	 * @param debug
+	 * @throws IllegalArgumentException
+	 * @throws IllegalStateException
+	 */
 	private void _initialize(Activity activity, String apiKey, String userID, boolean debug) throws IllegalArgumentException, IllegalStateException {
 		OmniataLog.i(TAG, "Initializing Omniata with apiKey: " + apiKey + " and userID: " + userID);
 		
@@ -374,9 +456,57 @@ public class Omniata {
 		eventWorker.start();
 	}
 	
+	/**
+	 * Initialization for multiple apiKeys and userIds
+	 * @param activity
+	 * @param userInfo
+	 * @param debug
+	 * @throws IllegalArgumentException
+	 * @throws IllegalStateException
+	 */
+	private void _initialize(Activity activity, Map<String, String> userInfo, boolean debug) throws IllegalArgumentException, IllegalStateException {
+		instance._getStrfromMap(userInfo);
+		
+		for (int i=0;i<apiKeys.length;i++){
+			OmniataLog.i(TAG, "Initializing Omniata with apiKey: " + apiKeys[i] + " and userID: " + userIds[i]);
+			
+			OmniataUtils.assertApiKeyValid(apiKeys[i]);
+			OmniataUtils.assertUserIdValid(userIds[i]);
+				
+				
+		}
+		if (activity == null) {
+			throw new IllegalArgumentException("Activity is null");
+		}
+		if (this.activity == null) {
+			this.activity = activity;
+		}
+		if (eventBuffer == null) {
+			eventBuffer = new LinkedBlockingQueue<JSONObject>();
+		}
+		
+		if (eventLog == null) {
+			eventLog = new PersistentBlockingQueue<JSONObject>(activity, EVENT_LOG, JSONObject.class);
+		}
+		
+		if (eventLogger == null) {
+			eventLogger = new OmniataEventLogger(eventBuffer, eventLog);
+		}
+		if (eventWorker == null) {
+			eventWorker = new OmniataEventWorker(activity, eventLog, debug);
+		}
+		eventLogger.start();
+		eventWorker.start();
+	}
+	
+	
 	private Activity 							activity;
 	private String 								apiKey;
 	private String 								userID;	
+	private String []							apiKeys;
+	private String []							userIds;
+	private String 								apiKeysStr;
+	private String								userIdsStr;
 	private BlockingQueue<JSONObject> 			eventBuffer;
 	private PersistentBlockingQueue<JSONObject> eventLog;
 	private OmniataEventLogger					eventLogger;
