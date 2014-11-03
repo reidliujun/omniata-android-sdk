@@ -13,12 +13,13 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.provider.Settings;
+import android.util.Log;
 
 public class Omniata {
 	
 	private static final String TAG       = "Omniata";
 	private static final String EVENT_LOG = "events";
-	private static final String SDK_VERSION = "android-1.1.1";
+	private static final String SDK_VERSION = "android-1.1.2";
 	
 	private static Omniata instance;
 	
@@ -92,6 +93,36 @@ public class Omniata {
 		}
 	}
 	
+	  /**
+	  * Track custom event for usage in Unity
+	  * @param eventType
+	  * @param para				
+	  */
+	 public static void unity_track(String eventType, String para){
+	     JSONObject parameters = new JSONObject();
+	     String[] paraArray=para.split("\n");
+	     String[] paraPair;
+	     // Convert string to JsonObject
+	     for (int i=0;i<paraArray.length;i++){
+	         paraPair = paraArray[i].split("=");
+	         try{
+	             parameters.put(paraPair[0], paraPair[1]);
+	         } catch(JSONException e){
+	             // do something
+	        	 OmniataLog.e(TAG, e.toString());
+	         }
+	     }
+	     instance._track(eventType, parameters);
+	 }
+	 
+	/**
+	 * unity_log log method for using in Unity3D 
+	 * @param message
+	 */
+	public static void unity_log(String message){
+	   Log.i("Omniata", message);
+	}
+	 
 	private static void assertInitialized() throws IllegalStateException{
 		if (instance == null) {
 			throw new IllegalStateException("Uninitialized SDK");
