@@ -14,9 +14,42 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
 /* package */ class OmniataUtils {
-	static final String API 	  		   = "api.omniata.com";
-	static final String TEST_API  		   = "api-test.omniata.com";
-	//static final String LOCAL_TEST_API     = "10.0.2.2:8000";
+	static String BASE_API_URL	   = "omniata.com";
+	static String API 			   = "api.omniata.com";
+	static String TEST_API 		   = "api-test.omniata.com";
+	static String TEST_EVENT_API   = "";
+	static String EVENT_API        = "";
+	static String CHANNEL_API 	   = "";
+	
+	
+	/**
+	 * Set EVENT and CHANNEL url for the customer.
+	 * @param org organization name
+	 * @param service serivce name of Omniata
+	 */
+	/*package*/ static public void setURL( boolean debug){
+		if(debug){
+			TEST_EVENT_API = TEST_API;
+		}else{
+			EVENT_API = API;
+		}
+		CHANNEL_API = API;
+	}
+	
+	/**
+	 * Set TEST_API by using the org defined by the customer.
+	 * @param org
+	 * @param debug
+	 */
+	/*package*/ static public void setURL(String org, boolean debug){
+		if(debug){
+			TEST_EVENT_API = org + "." + "analyzer-test." + BASE_API_URL;
+		}else{
+			EVENT_API = org + "." + "analyzer." + BASE_API_URL;
+		}
+		CHANNEL_API = org + "." + "engager." + BASE_API_URL;
+		
+	}
 	
 	/* package */ static String getProtocol(boolean useSSL) {
 		return useSSL ? "https://" : "http://";
@@ -24,9 +57,9 @@ import android.net.NetworkInfo;
 	
 	/* package */ static String getEventAPI(boolean useSSL, boolean debug) {
 		if (debug) {
-			return getProtocol(false) + TEST_API + "/event";  // Test API is http only
+			return getProtocol(false) + TEST_EVENT_API + "/event";  // Test API is http only
 		} else {
-			return getProtocol(useSSL) + API + "/event";
+			return getProtocol(useSSL) + EVENT_API + "/event";
 		}
 	}
 	
@@ -49,7 +82,7 @@ import android.net.NetworkInfo;
 	}
 	
 	/* package */ static String getChannelAPI(boolean useSSL) {
-		return getProtocol(useSSL) + API + "/channel";
+		return getProtocol(useSSL) + CHANNEL_API + "/channel";
 	}
 	
 	/* package */ static String convertStreamToString(InputStream is) {

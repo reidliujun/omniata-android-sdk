@@ -49,6 +49,26 @@ public class Omniata {
 		}
 	}
 	
+	/**
+	 * Initialize the Omniata API with different URL for different Omniata services
+	 * @param org 		organization name of the URl, new url will be <org>.analyzer.omniata.com and <org>.engager.omniata.com
+	 * @param uniURL 	whether the URL should be uniformed or not
+	 * @throws IllegalArgumentException
+	 */
+	public static void initialize(Activity activity, String apiKey, String userID, String org, boolean debug) throws IllegalArgumentException{
+		synchronized(Omniata.class) {			
+			if (instance == null) {
+				OmniataLog.i(TAG, "Initializing Omniata API");
+				instance = new Omniata(activity, apiKey, userID, org, debug);
+			}
+			/*
+			 * Since this singleton may persist across application launches
+			 * we need to support re-initialization of the SDK
+			 */
+			instance._initialize(activity, apiKey, userID, org, debug);
+		}
+	}
+	
 	public static void setLogLevel(int priority) {
 		OmniataLog.setPriority(priority);
 	}
@@ -66,6 +86,16 @@ public class Omniata {
 	public static void initialize(Activity activity, String apiKey, String userID) throws IllegalArgumentException {
 		initialize(activity, apiKey, userID, false);
 	}
+	
+	/**
+	 * Initialize the Omniata API with different URL for different Omniata services
+	 * @param org		organization name of the URl, new url will be <org>.analyzer.omniata.com and <org>.engager.omniata.com
+	 * @throws IllegalArgumentException
+	 */
+	public static void initialize(Activity activity, String apiKey, String userID, String org) throws IllegalArgumentException {
+		initialize(activity, apiKey, userID, org, false);
+	}
+	
 	
 	/**
 	 * Tracks a parameterless event
@@ -368,6 +398,11 @@ public class Omniata {
 
 	}
 	
+	private Omniata(Activity activity, String apiKey, String userID, String org, boolean debug) {
+
+	}
+	
+	
 	private void _initialize(Activity activity, String apiKey, String userID, boolean debug) throws IllegalArgumentException, IllegalStateException {
 		OmniataLog.i(TAG, "Initializing Omniata with apiKey: " + apiKey + " and userID: " + userID);
 		
@@ -377,6 +412,46 @@ public class Omniata {
 		
 		OmniataUtils.assertApiKeyValid(apiKey);
 		OmniataUtils.assertUserIdValid(userID);
+		OmniataUtils.setURL(debug);
+		
+		this.apiKey   	  = apiKey;
+		this.userID   	  = userID;
+		
+		if (this.activity == null) {
+			this.activity = activity;
+		}
+		
+		if (eventBuffer == null) {
+			eventBuffer = new LinkedBlockingQueue<JSONObject>();
+		}
+		
+		if (eventLog == null) {
+			eventLog = new PersistentBlockingQueue<JSONObject>(activity, EVENT_LOG, JSONObject.class);
+		}
+		
+		if (eventLogger == null) {
+			eventLogger = new OmniataEventLogger(eventBuffer, eventLog);
+		}
+		
+		if (eventWorker == null) {
+			eventWorker = new OmniataEventWorker(activity, eventLog, debug);
+		}
+		
+		eventLogger.start();
+		eventWorker.start();
+	}
+	
+	
+	private void _initialize(Activity activity, String apiKey, String userID, String org, boolean debug) throws IllegalArgumentException, IllegalStateException {
+		OmniataLog.i(TAG, "Initializing Omniata with apiKey: " + apiKey + " and userID: " + userID);
+		
+		if (activity == null) {
+			throw new IllegalArgumentException("Activity is null");
+		}
+		
+		OmniataUtils.assertApiKeyValid(apiKey);
+		OmniataUtils.assertUserIdValid(userID);
+		OmniataUtils.setURL(org, debug);
 
 		this.apiKey   	  = apiKey;
 		this.userID   	  = userID;
