@@ -10,6 +10,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.util.Log;
 
 class OmniataEventWorker implements Runnable {
 	private static final String TAG 			      	= "OmniataEventWorker";
@@ -153,6 +154,7 @@ class OmniataEventWorker implements Runnable {
 			String eventURL = OmniataUtils.getEventAPI(true, debug) + "?" + query;
 			
 			OmniataLog.i(TAG, "Calling event endpoint: " + eventURL);
+			Log.i(TAG,"Calling event endpoint: " + eventURL);
 			URL url = new URL(eventURL);
 
 			connection = (HttpURLConnection)url.openConnection();

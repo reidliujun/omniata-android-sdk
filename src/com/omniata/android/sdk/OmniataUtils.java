@@ -87,7 +87,7 @@ import android.net.NetworkInfo;
 		StringBuilder sb = new StringBuilder();
 		
 		try {
-			@SuppressWarnings("unchecked")
+			
 			Iterator<String> i = (Iterator<String>)jsonObj.keys();
 			while (i.hasNext()) {
 				String key = (String)i.next();
@@ -111,9 +111,7 @@ import android.net.NetworkInfo;
 	
 	/* package */ static JSONObject mergeJSON(JSONObject obj1, JSONObject obj2) {
 		JSONObject merged = new JSONObject();
-		@SuppressWarnings("unchecked")
 		Iterator<String> keys1 = (Iterator<String>)obj1.keys();
-		@SuppressWarnings("unchecked")
 		Iterator<String> keys2 = (Iterator<String>)obj2.keys();
 		
 		while(keys1.hasNext()) {

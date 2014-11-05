@@ -294,7 +294,7 @@ public class Omniata {
 			
 			@Override
 			public void run() {
-				String uri = OmniataUtils.getChannelAPI(true) + "?api_key=" + apiKey + "&uid=" + userID + "&channel_id" + channelId;
+				String uri = OmniataUtils.getChannelAPI(true) + "?api_key=" + apiKey + "&uid=" + userID + "&channel_id=" + channelId;
 				
 				try {
 					URL url = new URL(uri);
@@ -303,37 +303,23 @@ public class Omniata {
 					final int httpResponse = connection.getResponseCode();
 					
 					if (httpResponse >= 200 && httpResponse < 300) {
-						activity.runOnUiThread(new Runnable() {							
-							@Override
-							public void run() {
-								try {
-									String body = OmniataUtils.convertStreamToString(connection.getInputStream());
-									JSONObject jsonObj =  new JSONObject(body);
-									JSONArray content   = jsonObj.getJSONArray("content");
-									handler.onSuccess(channelId, content);
-								} catch (Exception e) {
-									handler.onError(channelId, e);
-								}
-							}
-						});
-						
-					} else {
-						activity.runOnUiThread(new Runnable() {
-							@Override
-							public void run() {
-								handler.onError(channelId, new Exception("Error: Invalid http response code: " + httpResponse));
-							}
-						});
-					}
-				} catch (final Exception e) {
-					activity.runOnUiThread(new Runnable() {
-						@Override
-						public void run() {
+						try {
+							String body = OmniataUtils.convertStreamToString(connection.getInputStream());
+							JSONObject jsonObj =  new JSONObject(body);
+							JSONArray content   = jsonObj.getJSONArray("content");
+							handler.onSuccess(channelId, content);
+							Log.i("Omniata", content.toString());
+						} catch (Exception e) {
 							handler.onError(channelId, e);
 						}
-					});
-					
+						
+					} else {
+						handler.onError(channelId, new Exception("Error: Invalid http response code: " + httpResponse));
+					}
+				} catch (final Exception e) {
+					handler.onError(channelId, e);
 				}
+				
 			}
 		});
 		
