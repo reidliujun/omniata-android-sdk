@@ -37,12 +37,12 @@ class OmniataEventWorker implements Runnable {
 		DISCARD
 	};
 
-	public OmniataEventWorker(Activity activity, PersistentBlockingQueue<JSONObject> eventLog, boolean debug) {
+	public OmniataEventWorker(Activity activity, PersistentBlockingQueue<JSONObject> eventLog) {
 		this.activity 		   = activity;
 		this.eventLog   	   = eventLog;
 		this.connectionTimeout = CONNECTION_TIMEOUT;
 		this.readTimeout 	   = READ_TIMEOUT;
-		this.debug 			   = debug;
+		this.debug 			   = false;
 		this.retries		   = 0;
 		this.worker            = new Thread(this);
 	}

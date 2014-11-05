@@ -23,30 +23,12 @@ import android.net.NetworkInfo;
 	
 	
 	/**
-	 * Set EVENT and CHANNEL url for the customer.
-	 * @param org organization name
-	 * @param service serivce name of Omniata
-	 */
-	/*package*/ static public void setURL( boolean debug){
-		if(debug){
-			TEST_EVENT_API = TEST_API;
-		}else{
-			EVENT_API = API;
-		}
-		CHANNEL_API = API;
-	}
-	
-	/**
 	 * Set TEST_API by using the org defined by the customer.
 	 * @param org
 	 * @param debug
 	 */
-	/*package*/ static public void setURL(String org, boolean debug){
-		if(debug){
-			TEST_EVENT_API = org + "." + "analyzer-test." + BASE_API_URL;
-		}else{
-			EVENT_API = org + "." + "analyzer." + BASE_API_URL;
-		}
+	/*package*/ static public void setURL(String org){
+		EVENT_API = org + "." + "analyzer." + BASE_API_URL;
 		CHANNEL_API = org + "." + "engager." + BASE_API_URL;
 		
 	}

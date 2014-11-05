@@ -27,4 +27,7 @@ proguard/
 *.iws
 .idea/
 
+#system geneerated files
+*.DS_Store
+
 javadoc
