@@ -2,6 +2,7 @@ package com.omniata.android.sdk;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.concurrent.BlockingQueue;
@@ -90,7 +91,8 @@ public class Omniata {
 	     for (int i=0;i<paraArray.length;i++){
 	         paraPair = paraArray[i].split("=");
 	         try{
-	             parameters.put(paraPair[0], paraPair[1]);
+	         	parameters.put(URLDecoder.decode(paraPair[0], "UTF-8"), URLDecoder.decode(paraPair[1], "UTF-8"));
+	            //parameters.put(paraPair[0], paraPair[1]);
 	         } catch(JSONException e){
 	             // do something
 	        	 OmniataLog.e(TAG, e.toString());
