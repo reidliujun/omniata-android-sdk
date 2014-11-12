@@ -20,7 +20,7 @@ public class Omniata {
 	
 	private static final String TAG       = "Omniata";
 	private static final String EVENT_LOG = "events";
-	private static final String SDK_VERSION = "android-1.1.3";
+	private static final String SDK_VERSION = "android-2.0.0";
 	
 	private static Omniata instance;
 	
@@ -93,7 +93,7 @@ public class Omniata {
 	         try{
 	         	parameters.put(URLDecoder.decode(paraPair[0], "UTF-8"), URLDecoder.decode(paraPair[1], "UTF-8"));
 	            //parameters.put(paraPair[0], paraPair[1]);
-	         } catch(JSONException e){
+	         } catch(Exception e){
 	             // do something
 	        	 OmniataLog.e(TAG, e.toString());
 	         }
