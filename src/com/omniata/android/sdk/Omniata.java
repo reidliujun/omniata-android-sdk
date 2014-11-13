@@ -20,7 +20,7 @@ public class Omniata {
 	
 	private static final String TAG       = "Omniata";
 	private static final String EVENT_LOG = "events";
-	private static final String SDK_VERSION = "android-2.0.0";
+	private static final String SDK_VERSION = "android-2.0.1";
 	
 	private static Omniata instance;
 	
@@ -52,7 +52,6 @@ public class Omniata {
 	}
 	
 	
-	
 	/**
 	 * Tracks a parameterless event
 	 * 
@@ -78,13 +77,30 @@ public class Omniata {
 		}
 	}
 	
+	/**
+	 * Track Load with unity version info getting from unity code.
+	 * @param para
+	 */
+	public static void unityTrackLoad(String para){
+		trackLoad(unityJsonGenerator(para));
+	}
+	
 	  /**
 	  * Track custom event for usage in Unity
 	  * @param eventType
 	  * @param para				
 	  */
-	 public static void unity_track(String eventType, String para){
-	     JSONObject parameters = new JSONObject();
+	 public static void unityTrack(String eventType, String para){
+	     instance._track(eventType, unityJsonGenerator(para));
+	 }
+	 
+	 /**
+	  * String from Unity to JSONobject, string from Unity is URL Encoded.
+	  * @param para
+	  * @return
+	  */
+	 private static JSONObject unityJsonGenerator(String para){
+		 JSONObject parameters = new JSONObject();
 	     String[] paraArray=para.split("\n");
 	     String[] paraPair;
 	     // Convert string to JsonObject
@@ -98,7 +114,7 @@ public class Omniata {
 	        	 OmniataLog.e(TAG, e.toString());
 	         }
 	     }
-	     instance._track(eventType, parameters);
+	     return parameters;
 	 }
 	 
 	/**
