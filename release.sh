@@ -7,7 +7,7 @@ fi
 
 VERSION=$1
 
-ECLIPSE_RELEASE_JAR=bin/omniata-android-sdk.jar
+ECLIPSE_RELEASE_JAR=omniata-android-sdk.jar
 RELEASE_JAR=omniata-android-sdk.jar
 if [ ! -f "$ECLIPSE_RELEASE_JAR" ]; then
     echo "Release jar-file missing: $ECLIPSE_RELEASE_JAR. It should be automatically build be Eclipse"
