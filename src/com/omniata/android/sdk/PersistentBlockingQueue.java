@@ -61,10 +61,15 @@ import android.database.sqlite.SQLiteOpenHelper;
 			Cursor c = OmniataDBHelper.first(getDB(), name);
 			
 			if (c != null) {
-				if (c.moveToFirst()) {
-					e = instantiateE(c);
+				try {
+					if (c.moveToFirst()) {
+						e = instantiateE(c);
+					}
+					c.close();
+				} catch (Exception ee) {
+					c.close();
+					return null;
 				}
-				c.close();
 			}
 		}
 		
