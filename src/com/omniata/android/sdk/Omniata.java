@@ -12,7 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
+import android.content.Context;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -27,23 +27,23 @@ public class Omniata {
 	
 	/**
 	 * Initialize the Omniata API with different URL for different Omniata services
-	 * @param activity
+	 * @param context
 	 * @param apiKey
 	 * @param userID
 	 * @param org	organization name of the URl, new url will be org.analyzer.omniata.com and org.engager.omniata.com
 	 * @throws IllegalArgumentException
 	 */
-	public static void initialize(Activity activity, String apiKey, String userID, String org) throws IllegalArgumentException{
+	public static void initialize(Context context, String apiKey, String userID, String org) throws IllegalArgumentException{
 		synchronized(Omniata.class) {			
 			if (instance == null) {
 				OmniataLog.i(TAG, "Initializing Omniata API");
-				instance = new Omniata(activity, apiKey, userID, org);
+				instance = new Omniata(context, apiKey, userID, org);
 			}
 			/*
 			 * Since this singleton may persist across application launches
 			 * we need to support re-initialization of the SDK
 			 */
-			instance._initialize(activity, apiKey, userID, org);
+			instance._initialize(context, apiKey, userID, org);
 		}
 	}
 	
@@ -353,15 +353,15 @@ public class Omniata {
 	}
 	
 	
-	private Omniata(Activity activity, String apiKey, String userID, String org) {
+	private Omniata(Context context, String apiKey, String userID, String org) {
 
 	}
 	
 	
-	private void _initialize(Activity activity, String apiKey, String userID, String org) throws IllegalArgumentException, IllegalStateException {
+	private void _initialize(Context context, String apiKey, String userID, String org) throws IllegalArgumentException, IllegalStateException {
 		OmniataLog.i(TAG, "Initializing Omniata with apiKey: " + apiKey + " and userID: " + userID);
 		
-		if (activity == null) {
+		if (context == null) {
 			throw new IllegalArgumentException("Activity is null");
 		}
 		
@@ -372,8 +372,8 @@ public class Omniata {
 		this.apiKey   	  = apiKey;
 		this.userID   	  = userID;
 		
-		if (this.activity == null) {
-			this.activity = activity;
+		if (this.context == null) {
+			this.context = context;
 		}
 		
 		if (eventBuffer == null) {
@@ -381,7 +381,7 @@ public class Omniata {
 		}
 		
 		if (eventLog == null) {
-			eventLog = new PersistentBlockingQueue<JSONObject>(activity, EVENT_LOG, JSONObject.class);
+			eventLog = new PersistentBlockingQueue<JSONObject>(context, EVENT_LOG, JSONObject.class);
 		}
 		
 		if (eventLogger == null) {
@@ -389,14 +389,14 @@ public class Omniata {
 		}
 		
 		if (eventWorker == null) {
-			eventWorker = new OmniataEventWorker(activity, eventLog);
+			eventWorker = new OmniataEventWorker(context, eventLog);
 		}
 		
 		eventLogger.start();
 		eventWorker.start();
 	}
 	
-	private Activity 							activity;
+	private Context 							context;
 	private String 								apiKey;
 	private String 								userID;	
 	private BlockingQueue<JSONObject> 			eventBuffer;

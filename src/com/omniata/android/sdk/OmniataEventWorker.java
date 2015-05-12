@@ -9,7 +9,7 @@ import java.net.URL;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
+import android.content.Context;
 import android.util.Log;
 
 class OmniataEventWorker implements Runnable {
@@ -22,7 +22,7 @@ class OmniataEventWorker implements Runnable {
 	private static final int    MAX_BACKOFF_EXP         = 9;				// 2^9 = 512 Seconds ~ 8 minutes
 	private static final int    MAX_RETRIES             = 30;
 
-	private Activity 							activity;
+	private Context 							context;
 	private int 								connectionTimeout;
 	private int 								readTimeout;
 	private boolean 							debug;	
@@ -38,8 +38,8 @@ class OmniataEventWorker implements Runnable {
 		DISCARD
 	};
 
-	public OmniataEventWorker(Activity activity, PersistentBlockingQueue<JSONObject> eventLog) {
-		this.activity 		   = activity;
+	public OmniataEventWorker(Context context, PersistentBlockingQueue<JSONObject> eventLog) {
+		this.context 		   = context;
 		this.eventLog   	   = eventLog;
 		this.connectionTimeout = CONNECTION_TIMEOUT;
 		this.readTimeout 	   = READ_TIMEOUT;
@@ -66,7 +66,7 @@ class OmniataEventWorker implements Runnable {
 
 	/**
 	 * Causes thread to sleep based on retry count
-	 * @param retries
+
 	 */
 	protected void throttle() throws InterruptedException {
 		int timeSleepMS = sleepTime();
@@ -86,7 +86,7 @@ class OmniataEventWorker implements Runnable {
 			while(isRunning) {
 				OmniataLog.v(TAG, "Thread running: " + Thread.currentThread().getId());
 				// Check for network connectivity prior to processing events
-				if (OmniataUtils.isConnected(activity)) {
+				if (OmniataUtils.isConnected(context)) {
 					OmniataLog.v(TAG, "Connection available");
 					processEvents();
 				} else {
