@@ -207,6 +207,9 @@ class OmniataEventWorker implements Runnable {
 		} catch (IOException e) {
 			OmniataLog.e(TAG, e.toString());
 			return EventStatus.RETRY;
+		} catch (SecurityException e) {
+			OmniataLog.e(TAG, e.toString());
+			return EventStatus.RETRY;
 		} finally {
 			if (connection != null) {
 				connection.disconnect();
