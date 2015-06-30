@@ -90,9 +90,20 @@ OmniataChannelEngine mChannel = new OmniataChannelEngine();
 Omniata.channel(channel_id, mChannel);
 ```
 
+####Push Notification
+- Calling this method will tell Omniata that this is eligible to receive push notifications.
+```java
+Activity activity = this;
+Omniata.initialize(activity, "<API_KEY>", "<USER_ID>");
+...
+Omniata.enablePushNotifications("<REGISTRATION_ID>");
+```
 
-
-
+- Disable with Omniata SDK
+Calling this method will tell Omniata to stop sending push notifications to this user
+```java
+Omniata.disablePushNotifications();
+```
 
 
 
